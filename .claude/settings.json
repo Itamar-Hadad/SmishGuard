@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Bash(mkdir -p graphs)",
+      "Bash(python create_graph.py)",
+      "Bash(python3 create_graph.py)",
+      "Bash(python3 create_graph.py --help)",
+      "Bash(python3 -c \"import pandas, numpy, matplotlib, seaborn; print\\('deps ok'\\)\")",
+      "Read(//Users/itamarhadad/.claude/**)",
+      "Edit(~/.claude/skills/visual_plan/**)",
+      "Bash(python3)",
+      "Bash(python3 -c \"import pdfplumber; print\\('pdfplumber ok'\\)\")",
+      "Bash(python3 -c \"import PyPDF2; print\\('PyPDF2 ok'\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(open /Users/itamarhadad/.claude/plans/i-want-you-to-idempotent-stonebraker.html)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(xxd \"/Users/itamarhadad/Desktop/study/Final Degree Project/smishing_detector.pkl\")",
+      "Bash(python3 -)",
+      "Bash(brew install *)"
+    ],
+    "additionalDirectories": [
+      "/Users/itamarhadad/.claude",
+      "/Users/itamarhadad/.claude/skills"
+    ]
+  }
+}
