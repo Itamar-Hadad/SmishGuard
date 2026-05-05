@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmishGuard — Python FastAPI Backend</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #e1e4e8;
+      --text: #24292e;
+      --muted: #586069;
+      --accent: #0366d6;
+      --accent-light: #f1f8ff;
+      --code-bg: #f6f8fa;
+      --success: #28a745;
+      --warning: #f66a0a;
+      --danger: #d73a49;
+      --heading-font: 'Georgia', serif;
+      --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono-font: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117; --surface: #161b22; --border: #30363d;
+        --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+        --accent-light: #1c2c3e; --code-bg: #1c2128;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--body-font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 2.5rem 3rem;
+    }
+    .doc-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 3px solid var(--accent);
+    }
+    .doc-header h1 {
+      font-family: var(--heading-font);
+      font-size: 2.2rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .doc-header .subtitle {
+      font-size: 1.05rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+    .toc {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 2.5rem;
+    }
+    .toc-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+    .toc ul { list-style: none; padding-left: 0; margin: 0; }
+    .toc ul li { line-height: 1.9; }
+    .toc ul li a { color: var(--accent); text-decoration: none; font-size: 0.88rem; }
+    .toc ul li a:hover { text-decoration: underline; }
+    h1 {
+      font-family: var(--heading-font);
+      font-size: 2.2rem;
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 0.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-family: var(--heading-font);
+      font-size: 1.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.35rem;
+    }
+    h3 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-top: 1.6rem;
+      margin-bottom: 0.5rem;
+    }
+    h4 {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-top: 1.2rem;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    p { margin-bottom: 1rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      background: var(--code-bg);
+      border-radius: 4px;
+      padding: 0.15em 0.4em;
+      font-family: var(--mono-font);
+      font-size: 0.88em;
+      border: 1px solid var(--border);
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem 0;
+    }
+    pre code {
+      display: block;
+      padding: 1.25rem;
+      font-size: 0.84em;
+      line-height: 1.6;
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      white-space: pre;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0 1.5rem 0;
+      font-size: 0.92rem;
+    }
+    th {
+      background: var(--code-bg);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+    }
+    td {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--code-bg); }
+    ul, ol { padding-left: 1.5rem; line-height: 2; margin-bottom: 1rem; }
+    ul ul, ol ol, ul ol, ol ul { padding-left: 1.25rem; margin-bottom: 0; }
+    li { margin-bottom: 0.1rem; }
+    blockquote {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-light);
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      font-style: italic;
+      margin: 1rem 0 1.5rem 0;
+      color: var(--muted);
+    }
+    blockquote p { margin-bottom: 0; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+    strong { font-weight: 700; }
+    em { font-style: italic; }
+
+    /* endpoint badge */
+    .endpoint {
+      display: inline-block;
+      font-family: var(--mono-font);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.2rem 0.7rem;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    .get  { background: #e6f4ea; color: #1e7e34; border: 1px solid #a8d5b0; }
+    .post { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+
+    /* callout box */
+    .callout {
+      border-left: 4px solid var(--warning);
+      background: #fff8f0;
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin: 1rem 0 1.5rem 0;
+      font-size: 0.92rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .callout { background: #1f1a10; }
+      .get  { background: #0d2016; color: #4caf50; border-color: #2e5c38; }
+      .post { background: #1f130a; color: #ff9800; border-color: #5c3a10; }
+    }
+
+    @media print {
+      .toc { display: none; }
+      body { background: white; color: black; padding: 0; }
+      .container { border: none; box-shadow: none; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <h1>🐍 SmishGuard — Python FastAPI Backend</h1>
+    <div class="subtitle">Production-Ready SMS Phishing Detection API</div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#project-structure">Project Structure</a></li>
+      <li><a href="#api-endpoints">API Endpoints</a></li>
+      <li><a href="#file-by-file-reference">File-by-File Reference</a></li>
+      <li><a href="#local-setup">Local Setup</a></li>
+      <li><a href="#example-curl-requests">Example curl Requests</a></li>
+      <li><a href="#android-app-integration">Android App Integration</a></li>
+      <li><a href="#deployment-to-render-free-tier">Deployment to Render (Free Tier)</a></li>
+      <li><a href="#plugging-in-your-real-ml-model">Plugging In Your Real ML Model</a></li>
+      <li><a href="#error-handling-summary">Error Handling Summary</a></li>
+    </ul>
+  </div>
+
+  <!-- Overview -->
+  <h2 id="overview">Overview</h2>
+  <p>
+    This is the backend server for the SmishGuard Android application. It exposes a REST API that accepts an incoming
+    SMS message and returns a phishing/ham classification. The analysis logic lives in a single service file —
+    swap out the placeholder with your real ML model without touching any route code.
+  </p>
+
+  <hr />
+
+  <!-- Project Structure -->
+  <h2 id="project-structure">Project Structure</h2>
+  <pre><code>sms-detection-backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                  # FastAPI app entry point, CORS, routers
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   └── sms.py               # POST /analyze-sms route
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   └── sms.py               # Pydantic request / response models
+│   └── services/
+│       ├── __init__.py
+│       └── sms_analyzer.py      # ← PLUG YOUR ML MODEL IN HERE
+├── requirements.txt
+├── Procfile                     # Render / Heroku start command
+├── .gitignore
+└── README.md</code></pre>
+
+  <hr />
+
+  <!-- API Endpoints -->
+  <h2 id="api-endpoints">API Endpoints</h2>
+
+  <h3><span class="endpoint get">GET</span> /</h3>
+  <p>Returns a basic status message confirming the API is running.</p>
+  <pre><code class="language-json">{
+  "message": "SmishGuard API is running",
+  "version": "1.0.0"
+}</code></pre>
+
+  <h3><span class="endpoint get">GET</span> /health</h3>
+  <p>Health-check endpoint. Used by deployment platforms (Render, Railway, etc.) to verify the service is alive.</p>
+  <pre><code class="language-json">{
+  "status": "ok"
+}</code></pre>
+
+  <h3><span class="endpoint post">POST</span> /analyze-sms</h3>
+  <p>Main endpoint. The Android app sends each incoming SMS here and receives a classification result.</p>
+
+  <h4>Request</h4>
+  <pre><code>POST /analyze-sms
+Content-Type: application/json
+
+{
+  "message": "URGENT: Your account is locked. Click http://bit.ly/unlock to verify."
+}</code></pre>
+
+  <h4>Response — Smishing detected</h4>
+  <pre><code class="language-json">{
+  "is_smishing": true,
+  "confidence": 0.91,
+  "label": "smishing",
+  "reason": "Placeholder: matched keyword(s): urgent, click, verify, account"
+}</code></pre>
+
+  <h4>Response — Safe (ham)</h4>
+  <pre><code class="language-json">{
+  "is_smishing": false,
+  "confidence": 0.05,
+  "label": "ham",
+  "reason": "Placeholder: no suspicious keywords detected"
+}</code></pre>
+
+  <h4>Validation error (empty message)</h4>
+  <pre><code class="language-json">{
+  "detail": "message must not be empty"
+}</code></pre>
+
+  <hr />
+
+  <!-- File-by-File Reference -->
+  <h2 id="file-by-file-reference">File-by-File Reference</h2>
+
+  <h3><code>app/main.py</code></h3>
+  <p>FastAPI application factory. Registers CORS middleware (allows all origins for Android compatibility), mounts routers, and defines the root <code>GET /</code> and <code>GET /health</code> endpoints.</p>
+  <pre><code class="language-python">from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routes import sms
+
+app = FastAPI(title="SmishGuard API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # tighten to your domain in production
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(sms.router)
+
+@app.get("/")
+def root():
+    return {"message": "SmishGuard API is running", "version": "1.0.0"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}</code></pre>
+
+  <h3><code>app/schemas/sms.py</code></h3>
+  <p>Pydantic models for request validation and response serialization.</p>
+  <pre><code class="language-python">from pydantic import BaseModel, field_validator
+
+class SMSRequest(BaseModel):
+    message: str
+
+    @field_validator("message")
+    @classmethod
+    def message_must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("message must not be empty")
+        return v.strip()
+
+class SMSResponse(BaseModel):
+    is_smishing: bool
+    confidence: float
+    label: str
+    reason: str</code></pre>
+
+  <h3><code>app/routes/sms.py</code></h3>
+  <p>Route handler. Calls the analyzer service and returns the result. No business logic here.</p>
+  <pre><code class="language-python">from fastapi import APIRouter
+from app.schemas.sms import SMSRequest, SMSResponse
+from app.services.sms_analyzer import analyze_sms
+
+router = APIRouter()
+
+@router.post("/analyze-sms", response_model=SMSResponse)
+def analyze(request: SMSRequest) -> SMSResponse:
+    result = analyze_sms(request.message)
+    return SMSResponse(
+        is_smishing=result.is_smishing,
+        confidence=result.confidence,
+        label=result.label,
+        reason=result.reason,
+    )</code></pre>
+
+  <h3><code>app/services/sms_analyzer.py</code> — ⭐ Edit this file to add your model</h3>
+  <p><strong>This is the only file you need to edit when swapping in your real model.</strong></p>
+  <pre><code class="language-python"># ---------------------------------------------------------------
+# PLUG YOUR ML MODEL IN HERE
+# ---------------------------------------------------------------
+# 1. Load your model at module level:
+#    import joblib
+#    model      = joblib.load("models/smishing_detector.pkl")
+#    vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
+#
+# 2. Replace the body of analyze_sms() with your inference code.
+#    Return an AnalysisResult — the route does not change.
+# ---------------------------------------------------------------
+
+from dataclasses import dataclass
+
+SMISHING_KEYWORDS = {
+    "urgent", "verify", "account locked", "click", "payment failed",
+    "suspended", "confirm", "login", "bank", "free", "win", "prize",
+}
+
+@dataclass
+class AnalysisResult:
+    is_smishing: bool
+    confidence: float
+    label: str
+    reason: str
+
+def analyze_sms(message: str) -> AnalysisResult:
+    lowered = message.lower()
+    matched = [kw for kw in SMISHING_KEYWORDS if kw in lowered]
+    if matched:
+        confidence = min(0.60 + len(matched) * 0.08, 0.99)
+        return AnalysisResult(True, round(confidence, 2), "smishing",
+                              f"Matched: {', '.join(matched)}")
+    return AnalysisResult(False, 0.05, "ham", "No suspicious keywords")</code></pre>
+
+  <h3><code>requirements.txt</code></h3>
+  <pre><code>fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2</code></pre>
+  <blockquote>
+    <p>When you add your real model, append its dependencies:<br />
+    <code>scikit-learn==1.5.2</code>, <code>sentence-transformers==3.1.1</code>, <code>joblib==1.4.2</code>, <code>xgboost==2.1.1</code></p>
+  </blockquote>
+
+  <h3><code>Procfile</code></h3>
+  <pre><code>web: uvicorn app.main:app --host 0.0.0.0 --port $PORT</code></pre>
+  <p>Render and Railway read this automatically. <code>$PORT</code> is injected by the platform.</p>
+
+  <h3><code>.gitignore</code></h3>
+  <pre><code>__pycache__/
+*.py[cod]
+*.pkl
+*.joblib
+.env
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store</code></pre>
+
+  <hr />
+
+  <!-- Local Setup -->
+  <h2 id="local-setup">Local Setup</h2>
+  <pre><code class="language-bash"># 1. Enter the project directory
+cd sms-detection-backend
+
+# 2. Create a virtual environment
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run the development server
+uvicorn app.main:app --reload --port 8000</code></pre>
+  <p>The API is now available at <code>http://localhost:8000</code>.</p>
+  <p>Interactive docs (Swagger UI): <code>http://localhost:8000/docs</code></p>
+
+  <hr />
+
+  <!-- Example curl Requests -->
+  <h2 id="example-curl-requests">Example curl Requests</h2>
+  <pre><code class="language-bash"># Health check
+curl http://localhost:8000/health
+
+# Analyze a smishing SMS
+curl -X POST http://localhost:8000/analyze-sms \
+  -H "Content-Type: application/json" \
+  -d '{"message": "URGENT: Your account is suspended. Click here to verify."}'
+
+# Analyze a safe SMS
+curl -X POST http://localhost:8000/analyze-sms \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hey, are we still meeting at 6pm today?"}'</code></pre>
+
+  <hr />
+
+  <!-- Android App Integration -->
+  <h2 id="android-app-integration">Android App Integration</h2>
+
+  <table>
+    <thead>
+      <tr><th>Environment</th><th>Base URL</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Android Emulator → localhost</td><td><code>http://10.0.2.2:8000</code></td></tr>
+      <tr><td>Real device on same Wi-Fi</td><td><code>http://&lt;your-laptop-IP&gt;:8000</code></td></tr>
+      <tr><td>After deploying to Render</td><td><code>https://your-app-name.onrender.com</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>In the Android app (Retrofit):</p>
+  <pre><code class="language-kotlin">// Local development (emulator)
+const val BASE_URL = "http://10.0.2.2:8000/"
+
+// Production (after deployment)
+const val BASE_URL = "https://your-app-name.onrender.com/"</code></pre>
+
+  <div class="callout">
+    ⚠️ <strong>Note:</strong> Android blocks plain HTTP by default for real-device testing.
+    Either use HTTPS (production URL) or add a <code>network_security_config.xml</code>
+    that allows cleartext traffic for your local IP only.
+  </div>
+
+  <hr />
+
+  <!-- Deployment to Render -->
+  <h2 id="deployment-to-render-free-tier">Deployment to Render (Free Tier)</h2>
+  <ol>
+    <li>Push the project to a GitHub repository.</li>
+    <li>Log in to <a href="https://render.com" target="_blank">render.com</a> and click <strong>New → Web Service</strong>.</li>
+    <li>Connect your GitHub repository.</li>
+    <li>Set the following:</li>
+  </ol>
+  <table>
+    <thead>
+      <tr><th>Setting</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Environment</td><td>Python 3</td></tr>
+      <tr><td>Build Command</td><td><code>pip install -r requirements.txt</code></td></tr>
+      <tr><td>Start Command</td><td><code>uvicorn app.main:app --host 0.0.0.0 --port $PORT</code></td></tr>
+    </tbody>
+  </table>
+  <ol start="5">
+    <li>Click <strong>Create Web Service</strong> — Render detects <code>Procfile</code> automatically.</li>
+    <li>Your API URL will be: <code>https://your-app-name.onrender.com</code></li>
+  </ol>
+
+  <hr />
+
+  <!-- Plugging In Your Real ML Model -->
+  <h2 id="plugging-in-your-real-ml-model">Plugging In Your Real ML Model</h2>
+  <p>Only <code>app/services/sms_analyzer.py</code> needs to change:</p>
+  <table>
+    <thead>
+      <tr><th>Step</th><th>What to do</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Copy your <code>.pkl</code> / <code>.joblib</code> model files into a <code>models/</code> folder</td></tr>
+      <tr><td>2</td><td>Load them at module level with <code>joblib.load(...)</code></td></tr>
+      <tr><td>3</td><td>Replace the body of <code>analyze_sms()</code> with your inference pipeline</td></tr>
+      <tr><td>4</td><td>Add model dependencies to <code>requirements.txt</code></td></tr>
+      <tr><td>5</td><td>Re-deploy — the route, schema, and Android app stay identical</td></tr>
+    </tbody>
+  </table>
+  <p>Your existing inference code from <code>NLP_smish.py</code> / <code>runModel.py</code> can be pasted directly into <code>analyze_sms()</code> with minimal changes.</p>
+
+  <hr />
+
+  <!-- Error Handling Summary -->
+  <h2 id="error-handling-summary">Error Handling Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Scenario</th><th>HTTP Status</th><th>Response</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Empty message body</td><td>422</td><td><code>{"detail": "message must not be empty"}</code></td></tr>
+      <tr><td>Missing <code>message</code> field</td><td>422</td><td>FastAPI automatic validation error</td></tr>
+      <tr><td>Internal analyzer exception</td><td>500</td><td><code>{"detail": "Internal server error"}</code></td></tr>
+      <tr><td>Unknown route</td><td>404</td><td>FastAPI automatic 404</td></tr>
+    </tbody>
+  </table>
+
+</div>
+</body>
+</html>

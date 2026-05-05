@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmishGuard — Android Smishing Detection App</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #e1e4e8;
+      --text: #24292e;
+      --muted: #586069;
+      --accent: #0366d6;
+      --accent-light: #f1f8ff;
+      --code-bg: #f6f8fa;
+      --success: #28a745;
+      --warning: #f66a0a;
+      --danger: #d73a49;
+      --heading-font: 'Georgia', serif;
+      --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono-font: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-light: #1c2c3e;
+        --code-bg: #1c2128;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--body-font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 2.5rem 3rem;
+    }
+    /* Header */
+    .doc-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 3px solid var(--accent);
+    }
+    .doc-header h1 {
+      font-family: var(--heading-font);
+      font-size: 2.2rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .doc-header .subtitle {
+      font-size: 1.1rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+    /* TOC */
+    .toc {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 2.5rem;
+    }
+    .toc h2 {
+      font-size: 1rem;
+      font-family: var(--body-font);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      border-bottom: none;
+      margin-top: 0;
+    }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc ul li { line-height: 1.9; }
+    .toc ul li a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .toc ul li a:hover { text-decoration: underline; }
+    /* Headings */
+    h1 {
+      font-family: var(--heading-font);
+      font-size: 2.2rem;
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 0.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-family: var(--heading-font);
+      font-size: 1.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.35rem;
+      color: var(--text);
+    }
+    h3 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    h4 {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+    }
+    /* Paragraphs */
+    p { margin-bottom: 1rem; }
+    /* Links */
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    /* Inline code */
+    code {
+      background: var(--code-bg);
+      border-radius: 4px;
+      padding: 0.15em 0.4em;
+      font-family: var(--mono-font);
+      font-size: 0.88em;
+      border: 1px solid var(--border);
+    }
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem 0;
+    }
+    pre code {
+      display: block;
+      padding: 1.25rem;
+      font-size: 0.85em;
+      line-height: 1.6;
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      white-space: pre;
+    }
+    /* Tables */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0 1.5rem 0;
+      font-size: 0.93rem;
+    }
+    th {
+      background: var(--code-bg);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    td {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--code-bg); }
+    /* Lists */
+    ul, ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+      line-height: 2;
+    }
+    ul ul, ol ol, ul ol, ol ul {
+      padding-left: 1.25rem;
+      margin-bottom: 0;
+    }
+    li { margin-bottom: 0.1rem; }
+    /* Checkbox lists */
+    ul.checklist { list-style: none; padding-left: 0.5rem; }
+    ul.checklist li { display: flex; align-items: flex-start; gap: 0.5rem; }
+    ul.checklist li::before {
+      content: '☐';
+      color: var(--muted);
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+    /* Blockquote */
+    blockquote {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-light);
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      font-style: italic;
+      margin: 1rem 0;
+      color: var(--muted);
+    }
+    /* HR */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+    /* Strong / em */
+    strong { font-weight: 700; }
+    em { font-style: italic; color: var(--muted); }
+    /* Wireframe boxes */
+    .wireframe {
+      background: var(--code-bg);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0 1.5rem;
+      font-family: var(--mono-font);
+      font-size: 0.82em;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    /* Phase badges in roadmap */
+    .phase-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.6rem;
+      border-radius: 12px;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+      letter-spacing: 0.03em;
+    }
+    /* Print styles */
+    @media print {
+      .toc { display: none; }
+      body { background: white; color: black; padding: 0; }
+      .container { border: none; box-shadow: none; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <h1>🛡️ SmishGuard — Android Smishing Detection App</h1>
+    <div class="subtitle">Full Product &amp; Technical Plan</div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+      <li><a href="#context">Context</a></li>
+      <li><a href="#1-product-plan">1. Product Plan</a></li>
+      <li><a href="#2-technical-architecture">2. Technical Architecture</a></li>
+      <li><a href="#3-android-permission-flow">3. Android Permission Flow</a></li>
+      <li><a href="#4-main-screens--user-flow">4. Main Screens &amp; User Flow</a></li>
+      <li><a href="#5-folder--package-structure">5. Folder / Package Structure</a></li>
+      <li><a href="#6-data-model">6. Data Model</a></li>
+      <li><a href="#7-background-sms-listener-design">7. Background SMS Listener Design</a></li>
+      <li><a href="#8-backend-api-contract">8. Backend API Contract</a></li>
+      <li><a href="#9-notification-behavior">9. Notification Behavior</a></li>
+      <li><a href="#10-statistics-logic">10. Statistics Logic</a></li>
+      <li><a href="#11-privacy--security-notes">11. Privacy &amp; Security Notes</a></li>
+      <li><a href="#12-edge-cases">12. Edge Cases</a></li>
+      <li><a href="#13-implementation-roadmap">13. Implementation Roadmap</a></li>
+      <li><a href="#14-wireframes--mockups">14. Wireframes / Mockups</a></li>
+      <li><a href="#critical-files-to-create">Critical Files to Create</a></li>
+      <li><a href="#dependencies-buildgradle">Dependencies (build.gradle)</a></li>
+      <li><a href="#verification-checklist">Verification Checklist</a></li>
+    </ul>
+  </div>
+
+  <!-- Context -->
+  <h2 id="context">Context</h2>
+  <p>
+    This Android application is the mobile front-end for a Final Degree Project on SMS phishing (smishing) detection.
+    The existing project already has a trained ML pipeline (<code>MLsmish.py</code> / <code>NLP_smish.py</code>) that uses
+    Sentence-BERT + engineered features + an ensemble model to classify SMS as <code>ham</code> or <code>smish</code>.
+    The Android app is the user-facing product that wraps that ML model via a REST backend, passively monitors incoming SMS,
+    and alerts users in real time. The goal is to turn the research prototype into a functional, deployable mobile security tool.
+  </p>
+
+  <hr />
+
+  <!-- 1. Product Plan -->
+  <h2 id="1-product-plan">1. Product Plan</h2>
+
+  <h3>Vision</h3>
+  <p>
+    A privacy-first, zero-friction Android security tool that silently monitors incoming SMS messages and instantly alerts
+    users when a phishing attempt is detected — with no configuration required.
+  </p>
+
+  <h3>Core User Journey</h3>
+  <ol>
+    <li>User installs the app → onboarding permission screen appears</li>
+    <li>User grants SMS + notification permissions → app starts background monitoring</li>
+    <li>User receives a smishing SMS → notification fires within seconds</li>
+    <li>User opens app → sees simple statistics (total scanned / total phishing)</li>
+    <li>If SMS permission ever revoked → blocking screen prompts re-grant</li>
+  </ol>
+
+  <h3>Non-Goals</h3>
+  <ul>
+    <li>No toggle to disable SMS scanning (by product decision)</li>
+    <li>No SMS inbox viewer</li>
+    <li>No manual message submission</li>
+    <li>No user account / login</li>
+  </ul>
+
+  <hr />
+
+  <!-- 2. Technical Architecture -->
+  <h2 id="2-technical-architecture">2. Technical Architecture</h2>
+
+  <pre><code>┌─────────────────────────────────────────────────────────────┐
+│                        Android App                          │
+│                                                             │
+│  ┌────────────┐    ┌──────────────┐    ┌─────────────────┐  │
+│  │  SMS Recv  │───▶│  SMS Worker  │───▶│  API Repository │  │
+│  │ (Broadcast)│    │(WorkManager) │    │  (Retrofit)     │  │
+│  └────────────┘    └──────────────┘    └────────┬────────┘  │
+│                                                 │           │
+│  ┌────────────┐    ┌──────────────┐             │           │
+│  │  Stats UI  │◀───│  ViewModel   │◀────────────┤           │
+│  │ (Activity) │    │  (LiveData)  │             │           │
+│  └────────────┘    └──────────────┘    ┌────────▼────────┐  │
+│                                        │  Local Storage  │  │
+│  ┌────────────┐                        │  (SharedPrefs   │  │
+│  │Permission  │                        │  + Room DB)     │  │
+│  │ Gating     │                        └─────────────────┘  │
+│  └────────────┘                                             │
+└─────────────────────────────────────────────────────────────┘
+         │ HTTPS + TLS
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend Server (Future)                   │
+│     Flask/FastAPI  →  NLP_smish.py  →  smishing_detector.pkl│
+│     (or Mock Server during development)                     │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+
+  <h3>Key Technology Choices</h3>
+  <table>
+    <thead>
+      <tr><th>Layer</th><th>Technology</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Language</td><td>Kotlin</td><td>Modern Android standard</td></tr>
+      <tr><td>Architecture</td><td>MVVM</td><td>Lifecycle-aware, testable</td></tr>
+      <tr><td>DI</td><td>Hilt</td><td>Official Jetpack DI</td></tr>
+      <tr><td>Networking</td><td>Retrofit 2 + OkHttp3</td><td>Typed HTTP client</td></tr>
+      <tr><td>Background</td><td>WorkManager</td><td>Battery-friendly, survives process death</td></tr>
+      <tr><td>Local DB</td><td>Room</td><td>SQLite ORM for scan history</td></tr>
+      <tr><td>Prefs</td><td>DataStore (Proto)</td><td>Type-safe persistent settings</td></tr>
+      <tr><td>UI</td><td>ViewBinding + Material 3</td><td>Clean, no Compose complexity needed</td></tr>
+      <tr><td>Notifications</td><td>NotificationManager + NotificationChannel</td><td>Android 8+ required</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 3. Android Permission Flow -->
+  <h2 id="3-android-permission-flow">3. Android Permission Flow</h2>
+
+  <h3>Required Permissions</h3>
+  <pre><code class="language-xml">&lt;!-- AndroidManifest.xml --&gt;
+
+&lt;!-- SMS Reading (dangerous — runtime prompt required) --&gt;
+&lt;uses-permission android:name="android.permission.RECEIVE_SMS" /&gt;
+&lt;uses-permission android:name="android.permission.READ_SMS" /&gt;
+
+&lt;!-- Notifications (runtime prompt on Android 13+) --&gt;
+&lt;uses-permission android:name="android.permission.POST_NOTIFICATIONS" /&gt;
+
+&lt;!-- Network --&gt;
+&lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+
+&lt;!-- Background work (declared, no runtime prompt) --&gt;
+&lt;uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;</code></pre>
+
+  <h3>Permission Request Flow</h3>
+  <pre><code>App Launch
+    │
+    ▼
+Check RECEIVE_SMS granted?
+    ├── NO  → Show PermissionBlockingActivity (non-dismissible)
+    │              → requestPermissions([RECEIVE_SMS, READ_SMS])
+    │              → If denied → show rationale + "Open Settings" button
+    │              → Only way out = uninstall
+    └── YES → Check POST_NOTIFICATIONS (Android 13+)
+                  ├── NOT GRANTED → request inline (non-blocking)
+                  └── GRANTED → Launch MainActivity (home screen)</code></pre>
+
+  <h3>Notes on Blocking Screen</h3>
+  <ul>
+    <li><code>PermissionBlockingActivity</code> has no back-navigation (overrides <code>onBackPressed</code>)</li>
+    <li>"Open Settings" deep-links to <code>Settings.ACTION_APPLICATION_DETAILS_SETTINGS</code></li>
+    <li>On return from settings (<code>onResume</code>), re-checks permission state</li>
+  </ul>
+
+  <hr />
+
+  <!-- 4. Main Screens & User Flow -->
+  <h2 id="4-main-screens--user-flow">4. Main Screens &amp; User Flow</h2>
+
+  <h3>Screen 1 — Permission Onboarding (Blocking)</h3>
+  <p><strong>Trigger:</strong> SMS permission not granted.</p>
+  <p><strong>Content:</strong></p>
+  <ul>
+    <li>App icon + name</li>
+    <li>Headline: "SMS Access Required"</li>
+    <li>Body: "SmishGuard protects you by monitoring incoming SMS messages for phishing attacks. This permission is required to use the app."</li>
+    <li>Privacy note: "Messages are sent to our secure server only for analysis and are never stored."</li>
+    <li>CTA button: "Grant Permission" → triggers runtime permission dialog</li>
+    <li>Secondary link (if previously denied): "Open Settings"</li>
+    <li>No dismiss / back / skip</li>
+  </ul>
+
+  <h3>Screen 2 — Home / Statistics (MainActivity)</h3>
+  <p><strong>Trigger:</strong> SMS permission granted.</p>
+  <pre><code>┌────────────────────────────┐
+│        SmishGuard          │
+│   ●  Active Protection     │
+│                            │
+│  ┌──────────┐ ┌──────────┐ │
+│  │   1,247  │ │    3     │ │
+│  │ Scanned  │ │ Threats  │ │
+│  └──────────┘ └──────────┘ │
+│                            │
+│  [Recent alerts list]      │
+│  (optional future feature) │
+└────────────────────────────┘</code></pre>
+  <p><strong>Behavior:</strong></p>
+  <ul>
+    <li>Numbers animate on load (counter animation)</li>
+    <li>Green indicator if no threats today; orange/red if threats detected</li>
+    <li>Pulls from Room DB (LiveData → ViewModel → UI)</li>
+  </ul>
+
+  <h3>Screen 3 — Permission Revoked (Blocking, re-shown on resume)</h3>
+  <p>Same as Screen 1 but with headline: "Permission Removed — App Paused"</p>
+
+  <hr />
+
+  <!-- 5. Folder / Package Structure -->
+  <h2 id="5-folder--package-structure">5. Folder / Package Structure</h2>
+  <pre><code>app/
+├── src/main/
+│   ├── AndroidManifest.xml
+│   ├── java/com/smishguard/
+│   │   ├── di/
+│   │   │   └── AppModule.kt           # Hilt: DB, Retrofit, Repo bindings
+│   │   │
+│   │   ├── data/
+│   │   │   ├── local/
+│   │   │   │   ├── AppDatabase.kt     # Room database
+│   │   │   │   ├── ScanDao.kt         # DAO: insert/count/query scans
+│   │   │   │   └── ScanEntity.kt      # Room entity: id, message_preview, is_phishing, timestamp
+│   │   │   ├── remote/
+│   │   │   │   ├── ApiService.kt      # Retrofit interface
+│   │   │   │   ├── AnalysisRequest.kt # Request data class
+│   │   │   │   ├── AnalysisResponse.kt# Response data class
+│   │   │   │   └── MockApiService.kt  # Dev-mode fake backend
+│   │   │   └── repository/
+│   │   │       └── SmsAnalysisRepo.kt # Orchestrates remote + local
+│   │   │
+│   │   ├── receiver/
+│   │   │   ├── SmsReceiver.kt         # BroadcastReceiver: RECEIVE_SMS
+│   │   │   └── BootReceiver.kt        # Re-registers after device reboot
+│   │   │
+│   │   ├── worker/
+│   │   │   └── SmsAnalysisWorker.kt   # WorkManager: calls API, saves result
+│   │   │
+│   │   ├── notification/
+│   │   │   └── NotificationHelper.kt  # Creates channel + fires notification
+│   │   │
+│   │   ├── ui/
+│   │   │   ├── permission/
+│   │   │   │   ├── PermissionActivity.kt
+│   │   │   │   └── activity_permission.xml
+│   │   │   └── home/
+│   │   │       ├── MainActivity.kt
+│   │   │       ├── HomeViewModel.kt
+│   │   │       └── activity_main.xml
+│   │   │
+│   │   └── SmishGuardApp.kt           # Application class (Hilt entry point)
+│   │
+│   └── res/
+│       ├── layout/
+│       ├── drawable/
+│       ├── values/
+│       │   ├── strings.xml
+│       │   ├── colors.xml
+│       │   └── themes.xml
+│       └── xml/
+│           └── backup_rules.xml       # Exclude SMS content from backups</code></pre>
+
+  <hr />
+
+  <!-- 6. Data Model -->
+  <h2 id="6-data-model">6. Data Model</h2>
+
+  <h3>Room Entity — <code>ScanEntity</code></h3>
+  <pre><code class="language-kotlin">@Entity(tableName = "scans")
+data class ScanEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val messagePreview: String,   // First 50 chars, truncated — no full message stored
+    val sender: String,           // Sender number (anonymized if possible)
+    val isPhishing: Boolean,
+    val confidence: Float,        // 0.0–1.0 from backend
+    val timestamp: Long,          // System.currentTimeMillis()
+    val backendReachable: Boolean // false if mock/offline result used
+)</code></pre>
+
+  <h3>DAO — <code>ScanDao</code></h3>
+  <pre><code class="language-kotlin">@Dao
+interface ScanDao {
+    @Insert suspend fun insert(scan: ScanEntity)
+    @Query("SELECT COUNT(*) FROM scans") fun getTotalCount(): LiveData&lt;Int&gt;
+    @Query("SELECT COUNT(*) FROM scans WHERE isPhishing = 1") fun getPhishingCount(): LiveData&lt;Int&gt;
+    @Query("SELECT * FROM scans ORDER BY timestamp DESC LIMIT 20") fun getRecentScans(): LiveData&lt;List&lt;ScanEntity&gt;&gt;
+}</code></pre>
+
+  <h3>DataStore Keys (SharedPreferences replacement)</h3>
+  <pre><code class="language-kotlin">object PreferencesKeys {
+    val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
+    val BACKEND_URL   = stringPreferencesKey("backend_url")
+    val DEV_MODE      = booleanPreferencesKey("dev_mode")
+}</code></pre>
+
+  <hr />
+
+  <!-- 7. Background SMS Listener Design -->
+  <h2 id="7-background-sms-listener-design">7. Background SMS Listener Design</h2>
+
+  <h3>How It Works</h3>
+  <p>Android has killed persistent background services for SMS. The correct modern approach is:</p>
+  <pre><code>SMS arrives
+    │
+    ▼
+SmsReceiver (BroadcastReceiver)
+    │  Extracts: sender + body from SmsMessage[]
+    │  Enqueues: WorkManager one-time work
+    │
+    ▼
+SmsAnalysisWorker (CoroutineWorker)
+    │  Calls: SmsAnalysisRepo.analyze(message)
+    │  On phishing:  NotificationHelper.sendAlert(preview)
+    │  Always:       ScanDao.insert(result)
+    │
+    ▼
+Result persisted to Room DB</code></pre>
+
+  <h3>SmsReceiver</h3>
+  <pre><code class="language-kotlin">class SmsReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
+        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        val body = messages.joinToString("") { it.messageBody }
+        val sender = messages.firstOrNull()?.originatingAddress ?: "Unknown"
+        SmsAnalysisWorker.enqueue(context, sender, body)
+    }
+}</code></pre>
+
+  <h3>SmsAnalysisWorker</h3>
+  <pre><code class="language-kotlin">class SmsAnalysisWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
+    override suspend fun doWork(): Result {
+        val message = inputData.getString(KEY_MESSAGE) ?: return Result.failure()
+        val sender = inputData.getString(KEY_SENDER) ?: "Unknown"
+        return try {
+            val result = repo.analyze(message, sender)
+            dao.insert(result.toEntity())
+            if (result.isPhishing) NotificationHelper.sendAlert(applicationContext, result.preview)
+            Result.success()
+        } catch (e: Exception) {
+            if (runAttemptCount &lt; 3) Result.retry() else Result.failure()
+        }
+    }
+}</code></pre>
+
+  <h3>Android Limitations to Note</h3>
+  <table>
+    <thead>
+      <tr><th>Limitation</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Android 8+ BroadcastReceiver restrictions</td><td>Static receivers for SMS still work (listed in Manifest)</td><td>Declared in AndroidManifest</td></tr>
+      <tr><td>Doze mode</td><td>May delay WorkManager work</td><td>WorkManager handles this automatically</td></tr>
+      <tr><td>Battery optimization</td><td>OEM may kill workers</td><td>Prompt user to whitelist app in battery settings</td></tr>
+      <tr><td>Android 13+ notifications</td><td>POST_NOTIFICATIONS requires runtime permission</td><td>Requested inline after SMS permission</td></tr>
+      <tr><td>Background execution limits</td><td>Cannot use a persistent Service</td><td>WorkManager is the correct solution</td></tr>
+      <tr><td>Android 10+ READ_SMS scope</td><td>Cannot read message threads</td><td>Only need RECEIVE_SMS for new messages</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 8. Backend API Contract -->
+  <h2 id="8-backend-api-contract">8. Backend API Contract</h2>
+
+  <h3>Base URL</h3>
+  <ul>
+    <li><code>https://api.smishguard.example.com/v1</code> — production</li>
+    <li><code>http://10.0.2.2:8000/v1</code> — Android emulator → localhost</li>
+  </ul>
+
+  <h3>Endpoint: Analyze Message</h3>
+
+  <h4>Request</h4>
+  <pre><code>POST /analyze
+Content-Type: application/json
+Authorization: Bearer &lt;API_KEY&gt;
+
+{
+  "message": "URGENT: Your bank account is suspended. Click http://bit.ly/abc123 to verify.",
+  "sender": "+1-555-0100",        // optional, may be anonymized
+  "timestamp": 1714478400000,     // epoch ms
+  "client_version": "1.0.0"
+}</code></pre>
+
+  <h4>Response — Phishing Detected</h4>
+  <pre><code class="language-json">{
+  "is_phishing": true,
+  "confidence": 0.97,
+  "label": "smish",
+  "signals": ["shortened_url", "urgency_words", "bank_impersonation"],
+  "request_id": "req_abc123"
+}</code></pre>
+
+  <h4>Response — Safe</h4>
+  <pre><code class="language-json">{
+  "is_phishing": false,
+  "confidence": 0.02,
+  "label": "ham",
+  "signals": [],
+  "request_id": "req_def456"
+}</code></pre>
+
+  <h4>Error Response</h4>
+  <pre><code class="language-json">{
+  "error": "service_unavailable",
+  "message": "Backend temporarily unavailable",
+  "retry_after": 30
+}</code></pre>
+
+  <h3>Mock Backend (Development Mode)</h3>
+  <pre><code class="language-kotlin">class MockApiService : ApiService {
+    override suspend fun analyze(request: AnalysisRequest): AnalysisResponse {
+        delay(300) // simulate network latency
+        val keywords = listOf("urgent", "click", "verify", "suspended", "http", "free", "win")
+        val isPhishing = keywords.any { request.message.lowercase().contains(it) }
+        return AnalysisResponse(
+            isPhishing = isPhishing,
+            confidence = if (isPhishing) 0.91f else 0.05f,
+            label = if (isPhishing) "smish" else "ham",
+            signals = if (isPhishing) listOf("keyword_match_mock") else emptyList(),
+            requestId = UUID.randomUUID().toString()
+        )
+    }
+}</code></pre>
+
+  <h3>Retrofit Interface</h3>
+  <pre><code class="language-kotlin">interface ApiService {
+    @POST("analyze")
+    suspend fun analyze(@Body request: AnalysisRequest): Response&lt;AnalysisResponse&gt;
+}</code></pre>
+
+  <hr />
+
+  <!-- 9. Notification Behavior -->
+  <h2 id="9-notification-behavior">9. Notification Behavior</h2>
+
+  <h3>Channel Setup (one-time, on app launch)</h3>
+  <pre><code class="language-kotlin">NotificationChannel(
+    CHANNEL_ID = "smishguard_alerts",
+    name = "Phishing Alerts",
+    importance = IMPORTANCE_HIGH       // heads-up notification
+).apply {
+    description = "Alerts when a suspicious SMS is detected"
+    enableVibration(true)
+    lockscreenVisibility = Notification.VISIBILITY_PRIVATE  // hides content on lock screen
+}</code></pre>
+
+  <h3>Notification Content</h3>
+  <pre><code>Title: "⚠ Suspicious SMS Detected"
+Body:  "A message from +1-555-XXXX may be a phishing attempt."
+       [first 40 chars of message, then "..."]
+
+Actions:
+  [View Details]  → opens MainActivity
+  [Dismiss]       → dismisses notification</code></pre>
+
+  <h3>Privacy Rules for Notification Body</h3>
+  <ul>
+    <li>Sender number: show last 4 digits only (<code>+1-555-XXXX</code>)</li>
+    <li>Message preview: max 40 characters, stripped of URLs</li>
+    <li>Never show the full message in the notification</li>
+    <li>Notification is <code>VISIBILITY_PRIVATE</code> (hidden on lock screen body)</li>
+  </ul>
+
+  <h3>Notification ID Strategy</h3>
+  <ul>
+    <li>Each SMS alert gets a unique notification ID (<code>timestamp.toInt()</code>)</li>
+    <li>Prevents newer alerts from replacing older unread ones</li>
+    <li>Max 5 active notifications (oldest dismissed automatically)</li>
+  </ul>
+
+  <hr />
+
+  <!-- 10. Statistics Logic -->
+  <h2 id="10-statistics-logic">10. Statistics Logic</h2>
+
+  <h3>Data Source</h3>
+  <p>All statistics are computed from the Room database via LiveData, so the home screen always reflects live, accurate counts.</p>
+
+  <h3>Counters</h3>
+  <table>
+    <thead>
+      <tr><th>Stat</th><th>Query</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Total Scanned</td><td><code>SELECT COUNT(*) FROM scans</code></td></tr>
+      <tr><td>Total Phishing</td><td><code>SELECT COUNT(*) FROM scans WHERE isPhishing = 1</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>ViewModel</h3>
+  <pre><code class="language-kotlin">class HomeViewModel @Inject constructor(private val dao: ScanDao) : ViewModel() {
+    val totalScanned: LiveData&lt;Int&gt; = dao.getTotalCount()
+    val phishingCount: LiveData&lt;Int&gt; = dao.getPhishingCount()
+}</code></pre>
+
+  <h3>Edge Cases for Stats</h3>
+  <ul>
+    <li>Stats persist across app restarts (Room DB is persistent)</li>
+    <li>Stats are <strong>not</strong> reset if permission is revoked and re-granted</li>
+    <li>Stats are per-device and not synced to any cloud</li>
+    <li>On fresh install: both counters show 0</li>
+    <li>If worker fails (backend down + retries exhausted): scan is still counted as "scanned" but marked <code>backendReachable = false</code>; classified as "safe" to avoid false positives</li>
+  </ul>
+
+  <hr />
+
+  <!-- 11. Privacy & Security Notes -->
+  <h2 id="11-privacy--security-notes">11. Privacy &amp; Security Notes</h2>
+
+  <h3>Data Minimization</h3>
+  <ul>
+    <li>Full SMS body is sent to backend for analysis, then <strong>immediately discarded</strong> — not stored in the backend</li>
+    <li>Only a 50-char preview + metadata (sender, timestamp, result) is stored locally in Room DB</li>
+    <li>Local DB is stored in app-private storage (not accessible without root)</li>
+    <li>Android backup rules exclude the database from cloud backups</li>
+  </ul>
+
+  <h3>Consent</h3>
+  <ul>
+    <li>App is non-functional without explicit SMS permission grant</li>
+    <li>Permission rationale screen explains exactly what data is sent and why</li>
+    <li>No analytics, no crash reporting SDK (can add opt-in later)</li>
+  </ul>
+
+  <h3>Network Security</h3>
+  <ul>
+    <li>TLS 1.2+ enforced via OkHttp's default TLS config</li>
+    <li>Certificate pinning recommended for production (<code>CertificatePinner</code>)</li>
+    <li>API key stored in <code>local.properties</code> / BuildConfig, never in source control</li>
+    <li><code>android:usesCleartextTraffic="false"</code> in Manifest for production</li>
+  </ul>
+
+  <h3>Backend Security</h3>
+  <ul>
+    <li>Messages should NOT be logged server-side</li>
+    <li>Rate limiting per device ID (anonymous, hashed device fingerprint)</li>
+    <li>Request authentication via Bearer token or HMAC signature</li>
+  </ul>
+
+  <h3>GDPR / Privacy Compliance</h3>
+  <ul>
+    <li>Privacy policy required before permission grant</li>
+    <li>Right to delete: user can clear all data via Android App Info → Clear Data</li>
+    <li>No personal data sent beyond the SMS text and optional sender prefix</li>
+  </ul>
+
+  <hr />
+
+  <!-- 12. Edge Cases -->
+  <h2 id="12-edge-cases">12. Edge Cases</h2>
+  <table>
+    <thead>
+      <tr><th>Edge Case</th><th>Handling</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SMS permission denied on first prompt</td><td>Show blocking screen with "Open Settings"</td></tr>
+      <tr><td>SMS permission revoked after grant</td><td><code>onResume</code> in MainActivity detects and redirects to blocking screen</td></tr>
+      <tr><td>Backend returns 500 / network timeout</td><td>WorkManager retries up to 3 times; if all fail, record scan as <code>backendReachable=false</code>, classify as safe</td></tr>
+      <tr><td>Backend slow (&gt;10s response)</td><td>OkHttp timeout set to 10s; worker marks retry</td></tr>
+      <tr><td>Multi-part SMS (long messages)</td><td><code>Telephony.Sms.Intents.getMessagesFromIntent</code> auto-reassembles parts; handled transparently</td></tr>
+      <tr><td>Duplicate SMS delivery</td><td>Debounce by hash of (sender + body + truncated timestamp); skip if already processed within 5s</td></tr>
+      <tr><td>Notification permission denied (Android 13+)</td><td>App continues scanning; just can't notify. Shows in-app banner on home screen instead</td></tr>
+      <tr><td>Device reboot</td><td>BootReceiver re-registers; WorkManager work survives reboot automatically</td></tr>
+      <tr><td>App in foreground when SMS arrives</td><td>Worker still fires; notification is sent as usual (user sees it immediately)</td></tr>
+      <tr><td>Very long message body</td><td>Truncate to first 500 chars before sending to backend (cost and privacy consideration)</td></tr>
+      <tr><td>Non-SMS (RCS, WhatsApp)</td><td>Not in scope; RECEIVE_SMS only covers traditional SMS</td></tr>
+      <tr><td>Low memory / worker killed</td><td>WorkManager persists pending work in its internal DB; resumes when resources available</td></tr>
+      <tr><td>Dev mode in production build</td><td><code>BuildConfig.DEV_MODE</code> flag; Mock only used in <code>debug</code> build variant</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 13. Implementation Roadmap -->
+  <h2 id="13-implementation-roadmap">13. Implementation Roadmap</h2>
+
+  <h3><span class="phase-badge">Phase 1</span> Foundation — Week 1–2</h3>
+  <ul class="checklist">
+    <li>Create Android project (Kotlin, min SDK 26 / Android 8)</li>
+    <li>Set up Hilt dependency injection</li>
+    <li>Implement Room database (<code>ScanEntity</code>, <code>ScanDao</code>, <code>AppDatabase</code>)</li>
+    <li>Implement DataStore for settings</li>
+    <li>Write <code>SmsReceiver</code> + <code>BootReceiver</code> BroadcastReceivers</li>
+    <li>Write <code>SmsAnalysisWorker</code> skeleton (WorkManager)</li>
+    <li>Register all receivers in AndroidManifest</li>
+  </ul>
+
+  <h3><span class="phase-badge">Phase 2</span> UI — Week 2–3</h3>
+  <ul class="checklist">
+    <li>Build <code>PermissionActivity</code> (blocking screen, rationale, settings deep-link)</li>
+    <li>Build <code>MainActivity</code> (statistics counters, status indicator)</li>
+    <li>Implement <code>HomeViewModel</code> with LiveData from Room</li>
+    <li>Apply Material 3 theme, colors, typography</li>
+  </ul>
+
+  <h3><span class="phase-badge">Phase 3</span> Mock Backend Integration — Week 3</h3>
+  <ul class="checklist">
+    <li>Define Retrofit <code>ApiService</code> interface + data classes</li>
+    <li>Implement <code>MockApiService</code> with keyword-based detection</li>
+    <li>Wire <code>SmsAnalysisRepo</code> to toggle between mock and real</li>
+    <li>Implement <code>NotificationHelper</code> (channel creation + alert firing)</li>
+    <li>End-to-end test with emulator using <code>adb shell am broadcast</code></li>
+  </ul>
+
+  <h3><span class="phase-badge">Phase 4</span> Real Backend Integration — Week 4–5</h3>
+  <ul class="checklist">
+    <li>Deploy Flask/FastAPI backend wrapping <code>NLP_smish.py</code> + <code>smishing_detector.pkl</code></li>
+    <li>Replace <code>MockApiService</code> with real Retrofit implementation</li>
+    <li>Add certificate pinning + API key auth</li>
+    <li>Test on real device with real SMS</li>
+  </ul>
+
+  <h3><span class="phase-badge">Phase 5</span> Polish &amp; Hardening — Week 5–6</h3>
+  <ul class="checklist">
+    <li>Error handling for all failure modes</li>
+    <li>Battery optimization prompt (link to device power settings)</li>
+    <li>Accessibility (content descriptions, large text support)</li>
+    <li>ProGuard / R8 rules for Retrofit + Hilt</li>
+    <li>Manual QA on 3+ Android versions (8, 12, 14)</li>
+  </ul>
+
+  <hr />
+
+  <!-- 14. Wireframes / Mockups -->
+  <h2 id="14-wireframes--mockups">14. Wireframes / Mockups</h2>
+
+  <h3>Wireframe A — Permission Onboarding (Blocking Screen)</h3>
+  <div class="wireframe">┌──────────────────────────────────────┐
+│                                      │
+│                                      │
+│            🛡️ SmishGuard             │
+│                                      │
+│         SMS Access Required          │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │                                │  │
+│  │  SmishGuard monitors incoming  │  │
+│  │  SMS messages to protect you   │  │
+│  │  from phishing attacks.        │  │
+│  │                                │  │
+│  │  This permission is required   │  │
+│  │  to use the app.               │  │
+│  │                                │  │
+│  │  📡 Messages are sent to our   │  │
+│  │     secure server for analysis │  │
+│  │     and never stored.          │  │
+│  │                                │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│   ┌──────────────────────────────┐   │
+│   │      Grant SMS Permission    │   │  ← Primary CTA
+│   └──────────────────────────────┘   │
+│                                      │
+│        Open Settings instead         │  ← Secondary (if denied)
+│                                      │
+│   If you don't want to grant         │
+│   permission, please uninstall       │
+│   the app.                           │
+│                                      │
+└──────────────────────────────────────┘</div>
+
+  <h3>Wireframe B — Home Statistics Screen</h3>
+  <div class="wireframe">┌──────────────────────────────────────┐
+│  SmishGuard                    ⋮     │
+├──────────────────────────────────────┤
+│                                      │
+│   ● Active — Protection is ON        │  ← Green status dot
+│                                      │
+├──────────────────────────────────────┤
+│                                      │
+│  ┌─────────────────┐ ┌─────────────┐ │
+│  │                 │ │             │ │
+│  │     1,247       │ │      3      │ │
+│  │   Messages      │ │   Threats   │ │
+│  │   Scanned       │ │  Detected   │ │
+│  │                 │ │             │ │
+│  └─────────────────┘ └─────────────┘ │
+│                                      │
+│         Protecting since             │
+│         April 30, 2026               │
+│                                      │
+└──────────────────────────────────────┘</div>
+
+  <h3>Wireframe C — Phishing Alert Notification</h3>
+  <div class="wireframe">┌──────────────────────────────────────┐
+│  SmishGuard                  just now │
+│  ⚠ Suspicious SMS Detected           │
+│  A message from +1-555-XXXX may be   │
+│  a phishing attempt.                 │
+│  ────────────────────────────────    │
+│  [View Details]          [Dismiss]   │
+└──────────────────────────────────────┘</div>
+
+  <hr />
+
+  <!-- Critical Files -->
+  <h2 id="critical-files-to-create">Critical Files to Create</h2>
+  <table>
+    <thead>
+      <tr><th>File</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>app/src/main/AndroidManifest.xml</code></td><td>Permissions + receivers declaration</td></tr>
+      <tr><td><code>data/local/ScanEntity.kt</code></td><td>Room entity</td></tr>
+      <tr><td><code>data/local/ScanDao.kt</code></td><td>Room DAO</td></tr>
+      <tr><td><code>data/local/AppDatabase.kt</code></td><td>Room DB</td></tr>
+      <tr><td><code>data/remote/ApiService.kt</code></td><td>Retrofit interface</td></tr>
+      <tr><td><code>data/remote/MockApiService.kt</code></td><td>Mock backend</td></tr>
+      <tr><td><code>data/repository/SmsAnalysisRepo.kt</code></td><td>Business logic</td></tr>
+      <tr><td><code>receiver/SmsReceiver.kt</code></td><td>BroadcastReceiver for SMS</td></tr>
+      <tr><td><code>worker/SmsAnalysisWorker.kt</code></td><td>WorkManager worker</td></tr>
+      <tr><td><code>notification/NotificationHelper.kt</code></td><td>Notification utilities</td></tr>
+      <tr><td><code>ui/permission/PermissionActivity.kt</code></td><td>Blocking permission screen</td></tr>
+      <tr><td><code>ui/home/MainActivity.kt</code></td><td>Home screen</td></tr>
+      <tr><td><code>ui/home/HomeViewModel.kt</code></td><td>Statistics ViewModel</td></tr>
+      <tr><td><code>di/AppModule.kt</code></td><td>Hilt module</td></tr>
+      <tr><td><code>SmishGuardApp.kt</code></td><td>Application class</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- Dependencies -->
+  <h2 id="dependencies-buildgradle">Dependencies (build.gradle)</h2>
+  <pre><code class="language-kotlin">// Hilt
+implementation("com.google.dagger:hilt-android:2.51")
+kapt("com.google.dagger:hilt-compiler:2.51")
+
+// Room
+implementation("androidx.room:room-runtime:2.6.1")
+implementation("androidx.room:room-ktx:2.6.1")
+kapt("androidx.room:room-compiler:2.6.1")
+
+// WorkManager
+implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+// Retrofit + OkHttp
+implementation("com.squareup.retrofit2:retrofit:2.11.0")
+implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+implementation("com.squareup.okhttp3:okhttp:4.12.0")
+implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+// DataStore
+implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+// ViewModel + LiveData
+implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
+implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")
+
+// Material Design 3
+implementation("com.google.android.material:material:1.12.0")
+
+// Hilt WorkManager integration
+implementation("androidx.hilt:hilt-work:1.2.0")
+kapt("androidx.hilt:hilt-compiler:1.2.0")</code></pre>
+
+  <hr />
+
+  <!-- Verification Checklist -->
+  <h2 id="verification-checklist">Verification Checklist</h2>
+  <ul class="checklist">
+    <li>Send test SMS via <code>adb shell am broadcast -a android.provider.Telephony.SMS_RECEIVED --es "pdu" ...</code></li>
+    <li>Verify WorkManager fires and calls mock backend</li>
+    <li>Verify notification appears with correct truncated content</li>
+    <li>Verify Room DB increments both counters correctly</li>
+    <li>Revoke SMS permission → confirm blocking screen appears</li>
+    <li>Kill app process → send SMS → verify still detected (WorkManager survives)</li>
+    <li>Deny notification permission → confirm no crash, in-app banner shown</li>
+    <li>Test on Android 8, 12, and 14</li>
+  </ul>
+
+</div>
+</body>
+</html>
