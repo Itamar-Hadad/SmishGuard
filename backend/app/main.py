@@ -6,11 +6,20 @@ import os
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import sms
+from app.services.sms_analyzer import load_models
 
-app = FastAPI(title="SmishGuard API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    load_models()
+    yield
+
+
+app = FastAPI(title="SmishGuard API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
