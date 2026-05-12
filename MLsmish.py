@@ -18,6 +18,8 @@ import seaborn as sns
 import warnings
 import joblib
 import os
+import subprocess
+import sys
 
 from sentence_transformers import SentenceTransformer
 
@@ -50,7 +52,7 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-DATASET_PATH  = 'dataset/dataset_with_new_smish_without_spam.csv'
+DATASET_PATH  = 'dataset/merged_dataset.csv'
 RANDOM_STATE  = 42
 TEST_SIZE     = 0.2
 CV_FOLDS      = 5
@@ -66,17 +68,14 @@ sns.set_theme(style='whitegrid')
 # FEATURE ENGINEERING
 # ============================================================================
 def engineer_features(df_input):
-    """Add 17 text-derived features to the DataFrame."""
+    """Add 15 text-derived features to the DataFrame."""
     d = df_input.copy()
 
-    # Original 6
-    d['msg_length']         = d['message'].str.len()
-    d['word_count']         = d['message'].str.split().str.len()
-    d['uppercase_ratio']    = d['message'].apply(
-        lambda m: sum(c.isupper() for c in str(m)) / max(len(str(m)), 1))
+    # Original (reduced to 4: merged msg_length+word_count → avg_word_length, dropped uppercase_ratio and exclamation_count)
+    _wc = d['message'].str.split().str.len().replace(0, 1)
+    d['avg_word_length']    = d['message'].str.len() / _wc
     d['digit_count']        = d['message'].apply(lambda m: sum(c.isdigit() for c in str(m)))
     d['special_char_count'] = d['message'].apply(lambda m: sum(c in '!$#*@' for c in str(m)))
-    d['exclamation_count']  = d['message'].str.count('!')
 
     # SMISH signals (6)
     d['has_shortened_url']         = d['message'].apply(detect_shortened_url)
@@ -103,9 +102,8 @@ def engineer_features(df_input):
     return d
 
 TEXT_FEATURE_COLS = [
-    # Original 6
-    'msg_length', 'word_count', 'uppercase_ratio',
-    'digit_count', 'special_char_count', 'exclamation_count',
+    # Original (4: avg_word_length replaces msg_length+word_count; uppercase_ratio and exclamation_count dropped)
+    'avg_word_length', 'digit_count', 'special_char_count',
     # SMISH signals (6)
     'has_shortened_url', 'has_login_words', 'has_urgency_words',
     'has_threat_words', 'asks_user_to_act', 'has_suspicious_url_domain',
@@ -215,12 +213,16 @@ def predict_message(message_text, model=None, encoder=None, sbert=None, tfidf=No
     row['email'] = feats['email']
     row['phone'] = feats['phone']
 
+    # Hard rule: no URL/phone/email = cannot be smishing (smishing requires a call-to-action)
+    if row['url'].iloc[0] == 0 and row['email'].iloc[0] == 0 and row['phone'].iloc[0] == 0:
+        return 'ham', 0.95
+    
     row = engineer_features(row)
 
     processed = preprocess_text(message_text)
     embedding = sbert.encode([processed], convert_to_numpy=True)
 
-    flags       = row[['url', 'email', 'phone']].values.astype(float)
+    flags       = row[['url', 'phone']].values.astype(float)
     text_feats  = row[TEXT_FEATURE_COLS].values.astype(float)
     tfidf_feats = tfidf.transform([message_text]).toarray()
     X_new       = np.hstack([embedding, flags, text_feats, tfidf_feats])
@@ -237,6 +239,12 @@ def predict_message(message_text, model=None, encoder=None, sbert=None, tfidf=No
 # MAIN TRAINING PIPELINE
 # ============================================================================
 if __name__ == '__main__':
+
+    # ── Regenerate EDA graphs ────────────────────────────────────────────────
+    print('=' * 70)
+    print('GENERATING EDA GRAPHS')
+    print('=' * 70)
+    subprocess.run([sys.executable, 'create_graph.py'], check=True)
 
     # ── Load Dataset ─────────────────────────────────────────────────────────
     print('=' * 70)
@@ -260,6 +268,25 @@ if __name__ == '__main__':
 
     print('Feature means by class:')
     print(df.groupby('label')[TEXT_FEATURE_COLS].mean().round(3).to_string())
+
+    # ── Post-Engineering Correlation Heatmap ─────────────────────────────────
+    _eng_corr_cols = TEXT_FEATURE_COLS + ['url', 'phone']
+    df['label_binary'] = (df['label'] == 'smish').astype(int)
+    _eng_corr_cols_with_label = _eng_corr_cols + ['label_binary']
+    corr_eng = df[_eng_corr_cols_with_label].corr()
+
+    fig, ax = plt.subplots(figsize=(14, 11))
+    sns.heatmap(corr_eng, ax=ax, annot=True, fmt='.2f', cmap='coolwarm',
+                center=0, linewidths=0.5, linecolor='white',
+                square=True, cbar_kws={'shrink': 0.8})
+    ax.set_title('Feature Correlation Heatmap — After Engineering\n(label_binary: 0 = ham, 1 = smish)',
+                 fontsize=13, fontweight='bold', pad=15)
+    plt.xticks(rotation=45, ha='right', fontsize=9)
+    plt.yticks(rotation=0, fontsize=9)
+    plt.tight_layout()
+    plt.savefig(f'{GRAPHS_DIR}/06b_correlation_heatmap_engineered.png', dpi=150, bbox_inches='tight')
+    plt.show()
+    print(f'Saved: {GRAPHS_DIR}/06b_correlation_heatmap_engineered.png')
 
     # ── Label Encoding & Train/Test Split ────────────────────────────────────
     print('\n' + '=' * 70)
@@ -304,7 +331,7 @@ if __name__ == '__main__':
     # ── TF-IDF Features ──────────────────────────────────────────────────────
     print('\nFitting TF-IDF vectorizer on training messages...')
     tfidf = TfidfVectorizer(
-        max_features=200,
+        max_features=50,
         ngram_range=(1, 2),
         stop_words='english',
         min_df=3,
@@ -315,8 +342,8 @@ if __name__ == '__main__':
     print(f'TF-IDF vocab size: {len(tfidf.get_feature_names_out())} features')
 
     # ── Assemble Feature Matrices ────────────────────────────────────────────
-    X_train_flags     = X_train_df[['url', 'email', 'phone']].values.astype(float)
-    X_test_flags      = X_test_df[['url', 'email', 'phone']].values.astype(float)
+    X_train_flags     = X_train_df[['url', 'phone']].values.astype(float)
+    X_test_flags      = X_test_df[['url', 'phone']].values.astype(float)
     X_train_text_f    = X_train_df[TEXT_FEATURE_COLS].values.astype(float)
     X_test_text_f     = X_test_df[TEXT_FEATURE_COLS].values.astype(float)
 
@@ -324,7 +351,7 @@ if __name__ == '__main__':
     X_test  = np.hstack([X_test_sbert,  X_test_flags,  X_test_text_f,  X_test_tfidf])
 
     print(f'\nFeature matrix: {X_train.shape[1]} dims  '
-          f'(384 SBERT + 3 flags + 17 text + 200 TF-IDF)')
+          f'(384 SBERT + 2 flags + 14 text + 50 TF-IDF)')
 
     # ── Model Definitions ────────────────────────────────────────────────────
     cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
